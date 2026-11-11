@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { 
   Search, 
@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import ProductCard from '@/components/products/ProductCard';
 
-const ProductsPage = () => {
+const ProductsContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -300,6 +300,24 @@ const ProductsPage = () => {
       </div>
 
     </div>
+  );
+};
+
+const ProductsPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div key={n} className="bg-white rounded-2xl h-80 animate-pulse border border-gray-100 p-4"></div>
+            ))}
+          </div>
+        </div>
+      }
+    >
+      <ProductsContent />
+    </Suspense>
   );
 };
 

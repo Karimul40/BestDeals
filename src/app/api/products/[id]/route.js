@@ -5,6 +5,8 @@ import Bid from '@/models/Bid';
 import { initialProducts } from '@/lib/seedData';
 import mongoose from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request, { params }) {
   try {
     const { id } = params;

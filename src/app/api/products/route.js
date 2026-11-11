@@ -3,6 +3,8 @@ import connectToDatabase from '@/lib/mongodb';
 import Product from '@/models/Product';
 import { initialProducts } from '@/lib/seedData';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request) {
   try {
     await connectToDatabase();

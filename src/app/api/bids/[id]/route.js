@@ -3,6 +3,8 @@ import connectToDatabase from '@/lib/mongodb';
 import Bid from '@/models/Bid';
 import Product from '@/models/Product';
 
+export const dynamic = 'force-dynamic';
+
 export async function DELETE(request, { params }) {
   try {
     const { id } = params;

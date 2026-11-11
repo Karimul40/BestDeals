@@ -22,6 +22,8 @@ const Navbar = () => {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const isAuthenticated = status === 'authenticated';
+  const isLoginPage = pathname === '/login';
+  const isRegisterPage = pathname === '/register';
 
   const navLinks = [
     { name: 'Home', href: '/', public: true },
@@ -55,16 +57,16 @@ const Navbar = () => {
           {/* Desktop Navigation Links */}
           <nav className="hidden md:flex items-center gap-1 lg:gap-2">
             {navLinks.map((link) => {
-              const isActive = pathname === link.href;
+              const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
               return (
                 <Link
                   key={link.name}
                   href={link.href}
                   onClick={(e) => handleProtectedNavigation(e, link)}
-                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`px-3 py-1.5 rounded-lg text-sm transition-all ${
                     isActive
-                      ? 'text-brand-600 font-bold'
-                      : 'text-gray-700 hover:text-brand-600'
+                      ? 'text-[#42307D] font-black'
+                      : 'text-gray-600 hover:text-[#42307D] font-medium'
                   }`}
                 >
                   {link.name}
@@ -151,13 +153,21 @@ const Navbar = () => {
               <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-gray-700 hover:text-brand-700 hover:bg-gray-50 border border-gray-200 transition-colors"
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    isLoginPage
+                      ? 'text-white bg-brand-700 hover:bg-brand-800 shadow-sm'
+                      : 'text-gray-700 bg-white border border-gray-300 hover:text-brand-700 hover:bg-gray-50'
+                  }`}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-white bg-brand-700 hover:bg-brand-800 shadow-sm transition-all"
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                    isLoginPage
+                      ? 'text-gray-700 bg-white border border-gray-300 hover:text-brand-700 hover:bg-gray-50'
+                      : 'text-white bg-brand-700 hover:bg-brand-800 shadow-sm'
+                  }`}
                 >
                   Register
                 </Link>
@@ -183,15 +193,15 @@ const Navbar = () => {
       {mobileMenuOpen && (
         <div className="md:hidden border-t border-gray-100 bg-white px-4 pt-3 pb-6 space-y-2 shadow-lg">
           {navLinks.map((link) => {
-            const isActive = pathname === link.href;
+            const isActive = link.href === '/' ? pathname === '/' : pathname.startsWith(link.href);
             return (
               <Link
                 key={link.name}
                 href={link.href}
                 onClick={(e) => handleProtectedNavigation(e, link)}
-                className={`block px-3 py-2.5 rounded-lg text-base font-medium ${
+                className={`block px-3 py-2.5 rounded-lg text-base font-semibold transition-colors ${
                   isActive
-                    ? 'text-brand-700 bg-brand-50 font-semibold'
+                    ? 'text-[#42307D] bg-purple-50 font-bold'
                     : 'text-gray-700 hover:bg-gray-50'
                 }`}
               >
@@ -229,14 +239,22 @@ const Navbar = () => {
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-lg text-sm font-medium text-gray-700 border border-gray-200 hover:bg-gray-50"
+                  className={`w-full text-center py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    isLoginPage
+                      ? 'text-white bg-brand-700 shadow-sm'
+                      : 'text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  }`}
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="w-full text-center py-2.5 rounded-lg text-sm font-medium text-white bg-brand-700 hover:bg-brand-800"
+                  className={`w-full text-center py-2.5 rounded-lg text-sm font-semibold transition-all ${
+                    isLoginPage
+                      ? 'text-gray-700 border border-gray-300 hover:bg-gray-50'
+                      : 'text-white bg-brand-700 shadow-sm'
+                  }`}
                 >
                   Register
                 </Link>

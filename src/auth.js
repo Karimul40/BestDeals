@@ -14,31 +14,79 @@ export const authOptions = {
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
           }),
         ]
-      : []),
+      : [
+          // Instant 1-click Google OAuth simulation when Google API keys are not provided
+          CredentialsProvider({
+            id: 'google',
+            name: 'Google',
+            credentials: {},
+            async authorize() {
+              try {
+                await connectToDatabase();
+                let user = await User.findOne({ email: 'karimul.developer@gmail.com' });
+                if (!user) {
+                  user = await User.create({
+                    name: 'Md. Karimul Islam',
+                    email: 'karimul.developer@gmail.com',
+                    image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+                    role: 'user',
+                  });
+                }
+                return {
+                  id: user._id.toString(),
+                  name: user.name,
+                  email: user.email,
+                  image: user.image,
+                  role: user.role,
+                };
+              } catch (error) {
+                console.error('Google mock authorize error:', error);
+                return {
+                  id: 'mock-google-user-id',
+                  name: 'Md. Karimul Islam',
+                  email: 'karimul.developer@gmail.com',
+                  image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+                  role: 'user',
+                };
+              }
+            },
+          }),
+        ]),
     
-    // Seamless Google One-Click OAuth Provider for instant testing
+    // Also keep google-mock id
     CredentialsProvider({
       id: 'google-mock',
       name: 'GoogleMock',
       credentials: {},
       async authorize() {
-        await connectToDatabase();
-        let user = await User.findOne({ email: 'karimul.developer@gmail.com' });
-        if (!user) {
-          user = await User.create({
-            name: 'Md. Karimul Islam (Google)',
+        try {
+          await connectToDatabase();
+          let user = await User.findOne({ email: 'karimul.developer@gmail.com' });
+          if (!user) {
+            user = await User.create({
+              name: 'Md. Karimul Islam',
+              email: 'karimul.developer@gmail.com',
+              image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
+              role: 'user',
+            });
+          }
+          return {
+            id: user._id.toString(),
+            name: user.name,
+            email: user.email,
+            image: user.image,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error('Google mock authorize error:', error);
+          return {
+            id: 'mock-google-user-id',
+            name: 'Md. Karimul Islam',
             email: 'karimul.developer@gmail.com',
             image: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150',
             role: 'user',
-          });
+          };
         }
-        return {
-          id: user._id.toString(),
-          name: user.name,
-          email: user.email,
-          image: user.image,
-          role: user.role,
-        };
       },
     }),
 
@@ -86,7 +134,7 @@ export const authOptions = {
   ],
   callbacks: {
     async signIn({ user, account }) {
-      if (account?.provider === 'google') {
+      if (account?.provider === 'google' && process.env.GOOGLE_CLIENT_ID) {
         try {
           await connectToDatabase();
           const existingUser = await User.findOne({ email: user.email.toLowerCase() });

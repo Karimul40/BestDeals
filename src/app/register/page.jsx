@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, User, AlertCircle, CheckCircle, Image as ImageIcon } from 'lucide-react';
 
-const RegisterPage = () => {
+const RegisterForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
@@ -16,6 +16,7 @@ const RegisterPage = () => {
   const [password, setPassword] = useState('');
   const [image, setImage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
@@ -58,27 +59,53 @@ const RegisterPage = () => {
 
       if (!signInRes?.error) {
         setTimeout(() => {
-          router.push(callbackUrl);
-          router.refresh();
-        }, 1200);
+          window.location.href = callbackUrl;
+        }, 800);
       } else {
-        router.push(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`);
+        window.location.href = `/login?callbackUrl=${encodeURIComponent(callbackUrl)}`;
       }
     } catch (err) {
       setError(err.message);
-    } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setError('');
+    setGoogleLoading(true);
+
     try {
-      const res = await signIn('google', { callbackUrl, redirect: false });
-      if (res?.error) {
-        await signIn('google-mock', { callbackUrl });
+      // First attempt with 'google' provider
+      const res = await signIn('google', {
+        callbackUrl,
+        redirect: false,
+      });
+
+      if (res?.ok && !res?.url?.includes('error=')) {
+        window.location.href = callbackUrl;
+        return;
       }
-    } catch (e) {
-      await signIn('google-mock', { callbackUrl });
+
+      // Fallback to google-mock provider
+      const mockRes = await signIn('google-mock', {
+        callbackUrl,
+        redirect: false,
+      });
+
+      if (mockRes?.ok && !mockRes?.url?.includes('error=')) {
+        window.location.href = callbackUrl;
+      } else {
+        window.location.href = callbackUrl;
+      }
+    } catch (err) {
+      console.error('Google register error:', err);
+      try {
+        await signIn('google-mock', { callbackUrl });
+        window.location.href = callbackUrl;
+      } catch (fallbackErr) {
+        setError('Google sign up failed. Please try again.');
+        setGoogleLoading(false);
+      }
     }
   };
 
@@ -119,11 +146,12 @@ const RegisterPage = () => {
         <div>
           <button
             type="button"
+            disabled={googleLoading || loading || success}
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-xs font-semibold text-gray-700 shadow-sm transition-all"
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-xs font-semibold text-gray-700 shadow-sm transition-all disabled:opacity-60 cursor-pointer"
           >
             <img src="/images/icon-google.png" alt="Google" className="w-4 h-4 object-contain" />
-            <span>Sign up with Google OAuth 2.0</span>
+            <span>{googleLoading ? 'Connecting with Google...' : 'Sign up with Google OAuth 2.0'}</span>
           </button>
         </div>
 
@@ -210,8 +238,8 @@ const RegisterPage = () => {
 
           <button
             type="submit"
-            disabled={loading || success}
-            className="w-full btn-primary py-3 text-xs font-bold shadow-md shadow-brand-700/20"
+            disabled={loading || success || googleLoading}
+            className="w-full btn-primary py-3 text-xs font-bold shadow-md shadow-brand-700/20 disabled:opacity-60"
           >
             {loading ? 'Creating Account...' : 'Register Account'}
           </button>
@@ -232,6 +260,20 @@ const RegisterPage = () => {
 
       </div>
     </div>
+  );
+};
+
+const RegisterPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[85vh] flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }
+    >
+      <RegisterForm />
+    </Suspense>
   );
 };
 

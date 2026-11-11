@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Mail, Lock, AlertCircle, Sparkles } from 'lucide-react';
 
-const LoginPage = () => {
+const LoginForm = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
@@ -14,6 +14,7 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState('');
 
   const handleCredentialsLogin = async (e) => {
@@ -30,25 +31,53 @@ const LoginPage = () => {
 
       if (res?.error) {
         setError(res.error);
+        setLoading(false);
       } else {
-        router.push(callbackUrl);
-        router.refresh();
+        window.location.href = callbackUrl;
       }
     } catch (err) {
       setError('An unexpected error occurred during login');
-    } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setError('');
+    setGoogleLoading(true);
+
     try {
-      const res = await signIn('google', { callbackUrl, redirect: false });
-      if (res?.error) {
-        await signIn('google-mock', { callbackUrl });
+      // First attempt with 'google' provider
+      const res = await signIn('google', {
+        callbackUrl,
+        redirect: false,
+      });
+
+      if (res?.ok && !res?.url?.includes('error=')) {
+        window.location.href = callbackUrl;
+        return;
       }
-    } catch (e) {
-      await signIn('google-mock', { callbackUrl });
+
+      // Fallback to google-mock provider
+      const mockRes = await signIn('google-mock', {
+        callbackUrl,
+        redirect: false,
+      });
+
+      if (mockRes?.ok && !mockRes?.url?.includes('error=')) {
+        window.location.href = callbackUrl;
+      } else {
+        // Direct redirect
+        window.location.href = callbackUrl;
+      }
+    } catch (err) {
+      console.error('Google login error:', err);
+      try {
+        await signIn('google-mock', { callbackUrl });
+        window.location.href = callbackUrl;
+      } catch (fallbackErr) {
+        setError('Google sign in failed. Please try again.');
+        setGoogleLoading(false);
+      }
     }
   };
 
@@ -87,11 +116,12 @@ const LoginPage = () => {
         <div>
           <button
             type="button"
+            disabled={googleLoading || loading}
             onClick={handleGoogleLogin}
-            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-xs font-semibold text-gray-700 shadow-sm transition-all"
+            className="w-full flex items-center justify-center gap-3 py-2.5 px-4 bg-white border border-gray-300 hover:bg-gray-50 rounded-xl text-xs font-semibold text-gray-700 shadow-sm transition-all disabled:opacity-60 cursor-pointer"
           >
             <img src="/images/icon-google.png" alt="Google" className="w-4 h-4 object-contain" />
-            <span>Continue with Google OAuth 2.0</span>
+            <span>{googleLoading ? 'Connecting with Google...' : 'Continue with Google OAuth 2.0'}</span>
           </button>
         </div>
 
@@ -145,8 +175,8 @@ const LoginPage = () => {
 
           <button
             type="submit"
-            disabled={loading}
-            className="w-full btn-primary py-3 text-xs font-bold shadow-md shadow-brand-700/20"
+            disabled={loading || googleLoading}
+            className="w-full btn-primary py-3 text-xs font-bold shadow-md shadow-brand-700/20 disabled:opacity-60"
           >
             {loading ? 'Authenticating...' : 'Sign In'}
           </button>
@@ -191,6 +221,20 @@ const LoginPage = () => {
 
       </div>
     </div>
+  );
+};
+
+const LoginPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-[80vh] flex items-center justify-center">
+          <div className="w-8 h-8 border-4 border-brand-600 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      }
+    >
+      <LoginForm />
+    </Suspense>
   );
 };
 

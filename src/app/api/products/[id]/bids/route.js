@@ -3,6 +3,8 @@ import connectToDatabase from '@/lib/mongodb';
 import Bid from '@/models/Bid';
 import mongoose from 'mongoose';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request, { params }) {
   try {
     const { id } = params;
